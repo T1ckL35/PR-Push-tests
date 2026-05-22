@@ -27,6 +27,10 @@ jobs:
     # Run this for everything EXCEPT non-merged closed PRs
     # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
     steps:
-      - name: Print message
-        run: echo "Hello, World PR!" # test
+      - name: Print message 1
+        run: echo "Hello, World PR!"
+
+      - name: Print message 2
+        if: (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        run: echo "PR merged event"
     
