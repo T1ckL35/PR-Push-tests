@@ -20,12 +20,33 @@ permissions:
   issues: read # Needed to check PR labels and numbers as they are technically issues in the GitHub API
 
 jobs:
-  build_configuration:
-    name: Build Configuration
+  enforce_version:
+    name: Enforce Version
     runs-on:
       - ubuntu-latest # could also use ubuntu-slim
-    # Run this for everything EXCEPT non-merged closed PRs
+    steps:
+      # This needs a branch protection rule configuring on the main branch that requires the PR to have one of the specified labels before it can be merged. This is to stop a PR being merged without a release label which would then not trigger the CD workflow to create a release and tag. The action will check the PR for the required labels and if not present it will fail the job and provide a message in the logs. It also outputs the PR number and labels as variables that can be used in other steps/jobs if needed. The action is flexible to be used in other repositories and allows configuration of the required labels and how they are validated (exactly one, any or all).
+      # This may be either a pull_request OR push event. It should stop a merge to main unless a required release label is present. On an actual merge to main both events will fire but the push event will not have access to the PR information directly.
+      - id: verify_version_label
+        name: Verify version label
+        uses: ./.github/actions/labels/enforce@main
+        with:
+          github_token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          sha: ${{ github.sha }}
+          pr_number: ${{ github.event.pull_request.number }}
+          pr_labels: ${{ join(github.event.pull_request.labels.*.name, ',') || '' }}
+          required_labels: "internal,patch,minor,major"
+
+  build_configuration:
+    name: Build Configuration
+    needs:
+      - enforce_version
+    runs-on:
+      - ubuntu-latest # could also use ubuntu-slim
     # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
+    # requires enforce_version to have passed: success()
+    if: (!failure() && !cancelled())
     steps:
       - name: Print message 1
         run: echo "Hello, World PR!"
