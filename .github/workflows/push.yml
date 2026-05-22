@@ -20,7 +20,7 @@ jobs:
   build_configuration:
     name: Build Configuration
     runs-on:
-      - nbs-ubuntu-latest # could also use ubuntu-slim
+      - ubuntu-latest # could also use ubuntu-slim
     # Run this for everything EXCEPT non-merged closed PRs
     # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
     steps:
