@@ -28,5 +28,5 @@ jobs:
     # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
     steps:
       - name: Print message
-        run: echo "Hello, World PR!"
+        run: echo "Hello, World PR!" # test
     
