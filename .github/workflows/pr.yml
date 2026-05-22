@@ -20,12 +20,52 @@ permissions:
   issues: read # Needed to check PR labels and numbers as they are technically issues in the GitHub API
 
 jobs:
-  build_configuration:
-    name: Build Configuration
+  enforce_version:
+    name: Enforce Version
     runs-on:
       - ubuntu-latest # could also use ubuntu-slim
-    # Run this for everything EXCEPT non-merged closed PRs
+    steps:
+      # This needs a branch protection rule configuring on the main branch that requires the PR to have one of the specified labels before it can be merged. This is to stop a PR being merged without a release label which would then not trigger the CD workflow to create a new module tag and package. The action will check the PR for the required labels and if not present it will fail the job and provide a message in the logs.
+      # It should stop a merge to main unless a required release label is present.
+      - name: Check PR has required label
+        run: |
+          # Use pipe delimiter to separate labels (handles labels with spaces)
+          labels_raw="${{ join(github.event.pull_request.labels.*.name, '|') }}"
+          required_labels=("internal" "patch" "minor" "major")
+          
+          found_labels=()
+          
+          # Split by pipe and check each label
+          IFS='|' read -ra label_array <<< "$labels_raw"
+          for pr_label in "${label_array[@]}"; do
+            for req_label in "${required_labels[@]}"; do
+              if [[ "$pr_label" == "$req_label" ]]; then
+                found_labels+=("$pr_label")
+                break
+              fi
+            done
+          done
+          
+          if [ ${#found_labels[@]} -eq 0 ]; then
+            echo "❌ PR must have exactly one of the required labels: internal, patch, minor, or major"
+            exit 1
+          elif [ ${#found_labels[@]} -gt 1 ]; then
+            echo "❌ PR must have exactly ONE of the required labels, but found multiple: ${found_labels[@]}"
+            exit 1
+          fi
+          
+          echo "✅ PR has exactly one required label: ${found_labels[0]}"
+
+  build_configuration:
+    name: Build Configuration
+    needs:
+      - enforce_version
+    runs-on:
+      - ubuntu-latest # could also use ubuntu-slim
     # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
+    # requires enforce_version to have passed: success()
+    # if: (!failure() && !cancelled())
+    if: success()
     steps:
       - name: Print message 1
         run: echo "Hello, World PR!"
