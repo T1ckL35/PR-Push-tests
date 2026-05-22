@@ -3,7 +3,7 @@ name: Pull Workflow
 on:
   push:
     branches:
-      - main
+      - notmain
 
 # concurrency:
 #   # Added to stop multiple runs of the workflow for the same branch or PR. This is because we only care about the latest run for a branch/PR and it saves resources by cancelling any in progress runs when a new commit is pushed. The concurrency group is defined as the workflow name and the branch or PR ref to ensure that runs are only cancelled for the same branch or PR.
