@@ -1,0 +1,29 @@
+name: Pull Workflow
+
+on:
+  push:
+    # means the workflow runs on pushes to any branch. Note, a merged PR will always create a push event to main and only then is the tagging step triggered.
+
+
+# concurrency:
+#   # Added to stop multiple runs of the workflow for the same branch or PR. This is because we only care about the latest run for a branch/PR and it saves resources by cancelling any in progress runs when a new commit is pushed. The concurrency group is defined as the workflow name and the branch or PR ref to ensure that runs are only cancelled for the same branch or PR.
+#   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+#   cancel-in-progress: true
+
+permissions:
+  contents: write # Needed for checkout
+  actions: read # Needed for the GitHub Actions API
+  pull-requests: read # Needed to check PR labels and numbers
+  issues: read # Needed to check PR labels and numbers as they are technically issues in the GitHub API
+
+jobs:
+  build_configuration:
+    name: Build Configuration
+    runs-on:
+      - nbs-ubuntu-latest # could also use ubuntu-slim
+    # Run this for everything EXCEPT non-merged closed PRs
+    # if: (!(github.event.action == 'closed' && github.event.pull_request.merged != true))
+    steps:
+      - name: Print message
+        run: echo "Hello, World Push!"
+    
